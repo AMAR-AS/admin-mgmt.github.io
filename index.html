@@ -4,263 +4,348 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASK | Attendance Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    
     <style>
         :root {
-            /* Light Mode Variables */
-            --bg: #e2e8f0;
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.3);
-            --text: #1e293b;
             --primary: #3b82f6;
             --accent: #8b5cf6;
             --success: #10b981;
-            --danger: #ef4444;
-            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        }
-
-        [data-theme="dark"] {
-            /* Dark Mode Variables */
+            --danger: #f43f5e;
             --bg: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text: #f1f5f9;
-            --primary: #60a5fa;
-            --accent: #a78bfa;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; transition: background 0.3s ease, color 0.3s ease; }
+        [data-theme="light"] {
+            --bg: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --border: rgba(0, 0, 0, 0.05);
+            --text-main: #1e293b;
+            --text-dim: #64748b;
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background-color: var(--bg);
+            color: var(--text-main);
             min-height: 100vh;
+            padding: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
-            background-image: radial-gradient(circle at 20% 20%, var(--primary), transparent 40%),
-                              radial-gradient(circle at 80% 80%, var(--accent), transparent 40%);
         }
 
-        .glass-container {
+        .dashboard {
             width: 100%;
-            max-width: 1000px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
+            max-width: 1100px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        /* Header Area */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
             border-radius: 24px;
-            padding: 40px;
-            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            margin-bottom: 2rem;
         }
 
-        /* Header & Toggle */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; color: var(--primary); }
-        
-        #theme-toggle {
-            background: var(--glass-border);
-            border: 1px solid var(--glass-border);
-            color: var(--text);
-            padding: 8px 16px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        /* Format Guide */
-        .guide-section {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .guide-section h3 { font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8; }
-        .grid-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .mini-card { background: var(--glass-bg); padding: 12px; border-radius: 12px; font-size: 0.7rem; }
-        .mini-card h4 { margin-bottom: 5px; color: var(--primary); }
-        .mini-card table { width: 100%; border-collapse: collapse; opacity: 0.7; }
-        .mini-card th { text-align: left; border-bottom: 1px solid var(--glass-border); }
-
-        /* Upload Section */
-        .upload-box {
-            border: 2px dashed var(--primary);
-            border-radius: 20px;
-            padding: 40px;
+        /* Action Zone */
+        .upload-section {
             text-align: center;
-            margin-bottom: 30px;
-            background: rgba(59, 130, 246, 0.05);
-        }
-        .file-input { margin-bottom: 20px; color: var(--text); }
-        .btn {
-            padding: 12px 28px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1rem;
+            border: 2px dashed var(--border);
+            padding: 3rem 1.5rem;
+            border-radius: 20px;
+            background: rgba(59, 130, 246, 0.03);
             transition: 0.3s;
         }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
-        .btn-success { background: var(--success); color: white; display: none; margin-top: 20px; }
+
+        .upload-section:hover { border-color: var(--primary); background: rgba(59, 130, 246, 0.08); }
+
+        .file-input-custom {
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+        }
+
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        
+        /* Guide Section */
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .sample-box {
+            background: rgba(0,0,0,0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .sample-box table { width: 100%; border-collapse: collapse; margin-top: 8px; color: var(--text-dim); }
 
         /* Results Table */
-        .table-wrapper { overflow-x: auto; margin-top: 30px; border-radius: 16px; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { background: rgba(0,0,0,0.1); padding: 15px; text-align: left; font-size: 0.85rem; }
-        td { padding: 15px; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
-        .status-badge { padding: 4px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
-        .bg-short { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .bg-safe { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .result-container { overflow-x: auto; width: 100%; border-radius: 16px; margin-top: 2rem; }
+        
+        table.main-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .main-table th { background: rgba(0,0,0,0.05); padding: 1rem; font-size: 0.85rem; color: var(--text-dim); }
+        .main-table td { padding: 1.2rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
 
-        .error-msg { color: var(--danger); font-weight: 600; margin-top: 10px; }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-short { background: rgba(244, 63, 94, 0.15); color: var(--danger); }
+        .badge-safe { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+
+        /* Modal Popups */
+        .modal-overlay {
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 100;
+            justify-content: center; align-items: center; padding: 1rem;
+        }
+
+        .modal {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 2.5rem;
+            border-radius: 24px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            .glass-card { padding: 1.5rem; }
+            .btn { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
-<body data-theme="light">
+<body data-theme="dark">
 
-    <div class="glass-container">
-        <div class="header">
-            <div class="logo">ASK // ATTENDANCE</div>
-            <button id="theme-toggle" onclick="toggleTheme()">🌓 Toggle Mode</button>
-        </div>
+    <div class="dashboard">
+        <header>
+            <div class="brand">ASK INTELLIGENCE</div>
+            <button class="btn btn-outline" onclick="toggleTheme()">🌓 Mode</button>
+        </header>
 
-        <div class="guide-section">
-            <h3>Accepted Formats (Smart Detection)</h3>
-            <div class="grid-preview">
-                <div class="mini-card">
-                    <h4>Minimal</h4>
-                    <table>
-                        <tr><th>TH</th><th>AH</th></tr>
-                        <tr><td>40</td><td>25</td></tr>
-                    </table>
-                </div>
-                <div class="mini-card">
-                    <h4>Standard (with DL)</h4>
-                    <table>
-                        <tr><th>TH</th><th>AH</th><th>DL</th></tr>
-                        <tr><td>40</td><td>25</td><td>5</td></tr>
-                    </table>
+        <div class="glass-card">
+            <div class="upload-section">
+                <h2 style="margin-bottom: 0.5rem;">Upload Report</h2>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Drop your Attendance Sheet (.xlsx, .xls, .csv)</p>
+                
+                <input type="file" id="excelInput" class="file-input-custom" accept=".xlsx, .xls, .csv">
+                
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="handleProcess()">
+                        ⚡ Analyze Now
+                    </button>
+                    <button id="dlBtn" class="btn btn-outline" style="display: none;" onclick="exportResults()">
+                        📥 Export Report
+                    </button>
                 </div>
             </div>
-        </div>
 
-        <div class="upload-box">
-            <input type="file" id="upload" class="file-input" accept=".xlsx, .xls" />
-            <br>
-            <button class="btn btn-primary" onclick="processAttendance()">Process File</button>
-            <br>
-            <button id="dl-btn" class="btn btn-success" onclick="downloadExcel()">⬇️ Download Report</button>
-            <div id="error-box" class="error-msg"></div>
-        </div>
+            <div id="guideSection" style="margin-top: 2.5rem;">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                    📌 Support Guide
+                </h3>
+                <div class="guide-grid">
+                    <div class="sample-box">
+                        <strong>Standard Columns Required:</strong>
+                        <table>
+                            <tr><th>Course Name</th><th>TH</th><th>AH</th></tr>
+                            <tr><td>Mathematics</td><td>40</td><td>25</td></tr>
+                        </table>
+                    </div>
+                    <div class="sample-box">
+                        <strong>With Duty Leave (Optional):</strong>
+                        <table>
+                            <tr><th>Course Name</th><th>TH</th><th>AH</th><th>DL</th></tr>
+                            <tr><td>Data Science</td><td>45</td><td>30</td><td>5</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-        <div id="result-wrapper" class="table-wrapper"></div>
+            <div id="resultOutput" class="result-container"></div>
+        </div>
+        
+        <footer style="text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+            Powered by ASK Ecosystem &copy; 2026
+        </footer>
+    </div>
+
+    <div id="errorModal" class="modal-overlay">
+        <div class="modal">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">❌</div>
+            <h2 id="modalTitle">Invalid Format</h2>
+            <p id="modalMsg" style="color: var(--text-dim); margin: 1rem 0 2rem 0;"></p>
+            <button class="btn btn-primary" onclick="closeModal()" style="width: 100%;">Close & Retry</button>
+        </div>
     </div>
 
     <script>
-        let globalProcessedData = [];
+        let reportData = [];
 
         function toggleTheme() {
             const body = document.body;
-            const current = body.getAttribute('data-theme');
-            body.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+            body.dataset.theme = body.dataset.theme === "dark" ? "light" : "dark";
         }
 
-        function processAttendance() {
-            const fileInput = document.getElementById('upload');
-            const errorBox = document.getElementById('error-box');
-            const resultWrapper = document.getElementById('result-wrapper');
-            const dlBtn = document.getElementById('dl-btn');
+        function closeModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
 
-            errorBox.innerText = "";
-            if (!fileInput.files[0]) {
-                errorBox.innerText = "Please select an Excel file.";
+        function triggerModal(title, msg) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMsg').innerText = msg;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        function handleProcess() {
+            const input = document.getElementById('excelInput');
+            if (!input.files[0]) {
+                triggerModal("No File Selected", "Please select an attendance sheet to continue.");
                 return;
             }
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const rawRows = XLSX.utils.sheet_to_json(sheet, {header: 1});
 
-                    // 1. SMART HEADER DETECTION
-                    let headerIdx = -1;
-                    for(let i=0; i<rawRows.length; i++){
-                        const row = rawRows[i];
-                        if(row.includes('TH') && row.includes('AH')) {
-                            headerIdx = i;
-                            break;
+                    // 1. Scan for the proper headers
+                    let headIdx = -1;
+                    for(let i=0; i<rawRows.length; i++) {
+                        if(rawRows[i].includes('TH') && rawRows[i].includes('AH')) {
+                            headIdx = i; break;
                         }
                     }
 
-                    if(headerIdx === -1) {
-                        errorBox.innerText = "Invalid format: Columns 'TH' and 'AH' not found.";
+                    if(headIdx === -1) {
+                        triggerModal("Wrong Layout", "We couldn't find 'TH' and 'AH' columns in your sheet.");
                         return;
                     }
 
-                    // 2. PROCESS DATA
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, {range: headerIdx});
-                    globalProcessedData = jsonData
-                        .filter(row => row['TH'] !== undefined && row['Course Name'] !== undefined)
-                        .map(row => {
-                            const th = parseFloat(row['TH']) || 0;
-                            const ah = parseFloat(row['AH']) || 0;
-                            const dl = parseFloat(row['DL']) || 0;
-                            const total = ah + dl;
-                            const pct = th > 0 ? (total / th * 100) : 0;
-                            const needed = Math.max(0, Math.ceil(3 * th - 4 * total));
+                    // 2. Map and Calculate
+                    const json = XLSX.utils.sheet_to_json(sheet, {range: headIdx});
+                    reportData = json
+                        .filter(r => r['TH'] != null && r['Course Name'] != null)
+                        .map(r => {
+                            const th = parseFloat(r['TH']) || 0;
+                            const ah = parseFloat(r['AH']) || 0;
+                            const dl = parseFloat(r['DL']) || 0;
+                            const totalAtt = ah + dl;
+                            const currentPct = th > 0 ? (totalAtt / th) * 100 : 0;
+                            const targetHrs = Math.max(0, Math.ceil(3 * th - 4 * totalAtt));
 
                             return {
-                                "Course": row['Course Name'],
-                                "TH": th,
-                                "Attended": total,
-                                "Percentage": pct.toFixed(1) + "%",
-                                "Status": pct < 75 ? "Short" : "Safe ✅",
-                                "HoursNeeded": needed
+                                "Course": r['Course Name'],
+                                "Total Hrs": th,
+                                "Attended (AH+DL)": totalAttended,
+                                "Percent": currentPct.toFixed(1) + "%",
+                                "Status": currentPct < 75 ? "Short" : "Safe",
+                                "Needed": targetHrs
                             };
                         });
 
-                    renderTable(globalProcessedData);
-                    dlBtn.style.display = 'inline-block';
+                    if(reportData.length === 0) {
+                        triggerModal("Empty Data", "The sheet was recognized but no numeric attendance records were found.");
+                        return;
+                    }
+
+                    renderUI();
+                    document.getElementById('guideSection').style.display = 'none';
+                    document.getElementById('dlBtn').style.display = 'inline-block';
+
                 } catch (err) {
-                    errorBox.innerText = "Error reading file. Is it a valid Excel?";
+                    triggerModal("System Error", "Failed to process the file. Ensure it's not encrypted or corrupt.");
                 }
             };
-            reader.readAsArrayBuffer(fileInput.files[0]);
+            reader.readAsArrayBuffer(input.files[0]);
         }
 
-        function renderTable(data) {
-            let html = `<table><thead><tr>
-                <th>Course Name</th><th>Total (TH)</th><th>Attended (AH+DL)</th><th>Current %</th><th>Status</th><th>Needed for 75%</th>
-            </tr></thead><tbody>`;
+        function renderUI() {
+            let tableHtml = `<table class="main-table">
+                <thead><tr>
+                    <th>Course</th><th>Total</th><th>Attended</th><th>Current %</th><th>Status</th><th>Hrs Needed</th>
+                </tr></thead><tbody>`;
             
-            data.forEach(item => {
-                const badgeClass = item.Status === "Short" ? "bg-short" : "bg-safe";
-                html += `<tr>
-                    <td>${item.Course}</td>
-                    <td>${item.TH}</td>
-                    <td>${item.Attended}</td>
-                    <td>${item.Percentage}</td>
-                    <td><span class="status-badge ${badgeClass}">${item.Status}</span></td>
-                    <td><b>${item.HoursNeeded} hrs</b></td>
+            reportData.forEach(item => {
+                const sBadge = item.Status === "Short" ? "badge-short" : "badge-safe";
+                tableHtml += `<tr>
+                    <td><b>${item.Course}</b></td>
+                    <td>${item['Total Hrs']}</td>
+                    <td>${item['Attended (AH+DL)']}</td>
+                    <td>${item.Percent}</td>
+                    <td><span class="badge ${sBadge}">${item.Status}</span></td>
+                    <td style="color:var(--primary)"><b>${item.Needed} hrs</b></td>
                 </tr>`;
             });
 
-            html += `</tbody></table>`;
-            document.getElementById('result-wrapper').innerHTML = html;
+            document.getElementById('resultOutput').innerHTML = tableHtml + "</tbody></table>";
         }
 
-        function downloadExcel() {
-            const ws = XLSX.utils.json_to_sheet(globalProcessedData);
+        function exportResults() {
+            const ws = XLSX.utils.json_to_sheet(reportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Attendance_Report");
-            XLSX.writeFile(wb, "ASK_Attendance_Summary.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "ASK_Analytics");
+            XLSX.writeFile(wb, "ASK_Attendance_Final.xlsx");
         }
     </script>
 </body>
