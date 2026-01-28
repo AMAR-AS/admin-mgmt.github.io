@@ -3,125 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Dashboard | ASK</title>
+    <title>ASK | Attendance Intelligence</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #1e293b; padding: 2rem; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
-        
-        .upload-section { text-align: center; border: 2px dashed #cbd5e1; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; }
-        .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; margin: 5px; }
-        .btn-submit { background: var(--primary); color: white; }
-        .btn-download { background: var(--success); color: white; display: none; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 2rem; font-size: 0.9rem; }
-        th { background: #f1f5f9; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        .status-short { color: var(--danger); font-weight: bold; }
-        .status-safe { color: var(--success); font-weight: bold; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>ASK Attendance Dashboard</h2>
-    
-    <div class="upload-section">
-        <input type="file" id="upload" accept=".xlsx, .xls" />
-        <br><br>
-        <button class="btn btn-submit" onclick="processFile()">Submit & Calculate</button>
-        <button id="downloadBtn" class="btn btn-download" onclick="downloadExcel()">Download Excel Report</button>
-    </div>
-
-    <div id="resultsArea">
-        </div>
-</div>
-
-<script>
-    let processedDataGlobal = [];
-
-    function processFile() {
-        const fileInput = document.getElementById('upload');
-        if (!fileInput.files[0]) {
-            alert("Please select a file first!");
-            return;
+        :root {
+            /* Light Mode Variables */
+            --bg: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text: #1e293b;
+            --primary: #3b82f6;
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        [data-theme="dark"] {
+            /* Dark Mode Variables */
+            --bg: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #f1f5f9;
+            --primary: #60a5fa;
+            --accent: #a78bfa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; transition: background 0.3s ease, color 0.3s ease; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 20% 20%, var(--primary), transparent 40%),
+                              radial-gradient(circle at 80% 80%, var(--accent), transparent 40%);
+        }
+
+        .glass-container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+        }
+
+        /* Header & Toggle */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; color: var(--primary); }
+        
+        #theme-toggle {
+            background: var(--glass-border);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Format Guide */
+        .guide-section {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .guide-section h3 { font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8; }
+        .grid-preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .mini-card { background: var(--glass-bg); padding: 12px; border-radius: 12px; font-size: 0.7rem; }
+        .mini-card h4 { margin-bottom: 5px; color: var(--primary); }
+        .mini-card table { width: 100%; border-collapse: collapse; opacity: 0.7; }
+        .mini-card th { text-align: left; border-bottom: 1px solid var(--glass-border); }
+
+        /* Upload Section */
+        .upload-box {
+            border: 2px dashed var(--primary);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .file-input { margin-bottom: 20px; color: var(--text); }
+        .btn {
+            padding: 12px 28px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
+        .btn-success { background: var(--success); color: white; display: none; margin-top: 20px; }
+
+        /* Results Table */
+        .table-wrapper { overflow-x: auto; margin-top: 30px; border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: rgba(0,0,0,0.1); padding: 15px; text-align: left; font-size: 0.85rem; }
+        td { padding: 15px; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
+        .status-badge { padding: 4px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
+        .bg-short { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .bg-safe { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        .error-msg { color: var(--danger); font-weight: 600; margin-top: 10px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="glass-container">
+        <div class="header">
+            <div class="logo">ASK // ATTENDANCE</div>
+            <button id="theme-toggle" onclick="toggleTheme()">🌓 Toggle Mode</button>
+        </div>
+
+        <div class="guide-section">
+            <h3>Accepted Formats (Smart Detection)</h3>
+            <div class="grid-preview">
+                <div class="mini-card">
+                    <h4>Minimal</h4>
+                    <table>
+                        <tr><th>TH</th><th>AH</th></tr>
+                        <tr><td>40</td><td>25</td></tr>
+                    </table>
+                </div>
+                <div class="mini-card">
+                    <h4>Standard (with DL)</h4>
+                    <table>
+                        <tr><th>TH</th><th>AH</th><th>DL</th></tr>
+                        <tr><td>40</td><td>25</td><td>5</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="upload-box">
+            <input type="file" id="upload" class="file-input" accept=".xlsx, .xls" />
+            <br>
+            <button class="btn btn-primary" onclick="processAttendance()">Process File</button>
+            <br>
+            <button id="dl-btn" class="btn btn-success" onclick="downloadExcel()">⬇️ Download Report</button>
+            <div id="error-box" class="error-msg"></div>
+        </div>
+
+        <div id="result-wrapper" class="table-wrapper"></div>
+    </div>
+
+    <script>
+        let globalProcessedData = [];
+
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            body.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+        }
+
+        function processAttendance() {
+            const fileInput = document.getElementById('upload');
+            const errorBox = document.getElementById('error-box');
+            const resultWrapper = document.getElementById('result-wrapper');
+            const dlBtn = document.getElementById('dl-btn');
+
+            errorBox.innerText = "";
+            if (!fileInput.files[0]) {
+                errorBox.innerText = "Please select an Excel file.";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+
+                    // 1. SMART HEADER DETECTION
+                    let headerIdx = -1;
+                    for(let i=0; i<rawRows.length; i++){
+                        const row = rawRows[i];
+                        if(row.includes('TH') && row.includes('AH')) {
+                            headerIdx = i;
+                            break;
+                        }
+                    }
+
+                    if(headerIdx === -1) {
+                        errorBox.innerText = "Invalid format: Columns 'TH' and 'AH' not found.";
+                        return;
+                    }
+
+                    // 2. PROCESS DATA
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, {range: headerIdx});
+                    globalProcessedData = jsonData
+                        .filter(row => row['TH'] !== undefined && row['Course Name'] !== undefined)
+                        .map(row => {
+                            const th = parseFloat(row['TH']) || 0;
+                            const ah = parseFloat(row['AH']) || 0;
+                            const dl = parseFloat(row['DL']) || 0;
+                            const total = ah + dl;
+                            const pct = th > 0 ? (total / th * 100) : 0;
+                            const needed = Math.max(0, Math.ceil(3 * th - 4 * total));
+
+                            return {
+                                "Course": row['Course Name'],
+                                "TH": th,
+                                "Attended": total,
+                                "Percentage": pct.toFixed(1) + "%",
+                                "Status": pct < 75 ? "Short" : "Safe ✅",
+                                "HoursNeeded": needed
+                            };
+                        });
+
+                    renderTable(globalProcessedData);
+                    dlBtn.style.display = 'inline-block';
+                } catch (err) {
+                    errorBox.innerText = "Error reading file. Is it a valid Excel?";
+                }
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        }
+
+        function renderTable(data) {
+            let html = `<table><thead><tr>
+                <th>Course Name</th><th>Total (TH)</th><th>Attended (AH+DL)</th><th>Current %</th><th>Status</th><th>Needed for 75%</th>
+            </tr></thead><tbody>`;
             
-            // We use range: 4 to skip the university header rows
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, {range: 4});
-
-            processedDataGlobal = jsonData.map(row => {
-                const th = parseFloat(row['TH']) || 0;
-                const ah = parseFloat(row['AH']) || 0;
-                const dl = parseFloat(row['DL']) || 0;
-                const totalAttended = ah + dl;
-                const currentPercent = th > 0 ? (totalAttended / th) * 100 : 0;
-                
-                // Formula: 3*TH - 4*(AH+DL) to reach 75%
-                const needed = Math.max(0, Math.ceil(3 * th - 4 * totalAttended));
-
-                return {
-                    "Course": row['Course Name'] || "Unknown",
-                    "Total": th,
-                    "Attended": totalAttended,
-                    "Percentage": currentPercent.toFixed(1) + "%",
-                    "Status": currentPercent < 75 ? "Short" : "Safe ✅",
-                    "Needed": needed
-                };
+            data.forEach(item => {
+                const badgeClass = item.Status === "Short" ? "bg-short" : "bg-safe";
+                html += `<tr>
+                    <td>${item.Course}</td>
+                    <td>${item.TH}</td>
+                    <td>${item.Attended}</td>
+                    <td>${item.Percentage}</td>
+                    <td><span class="status-badge ${badgeClass}">${item.Status}</span></td>
+                    <td><b>${item.HoursNeeded} hrs</b></td>
+                </tr>`;
             });
 
-            renderTable(processedDataGlobal);
-            document.getElementById('downloadBtn').style.display = 'inline-block';
-        };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    }
+            html += `</tbody></table>`;
+            document.getElementById('result-wrapper').innerHTML = html;
+        }
 
-    function renderTable(data) {
-        let html = `<table>
-            <thead>
-                <tr>
-                    <th>Course Name</th>
-                    <th>Total Hours</th>
-                    <th>Attended (inc. DL)</th>
-                    <th>Current %</th>
-                    <th>Status</th>
-                    <th>Hours to Attend</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-        data.forEach(row => {
-            const statusClass = row.Status === "Short" ? "status-short" : "status-safe";
-            html += `<tr>
-                <td>${row.Course}</td>
-                <td>${row.Total}</td>
-                <td>${row.Attended}</td>
-                <td>${row.Percentage}</td>
-                <td class="${statusClass}">${row.Status}</td>
-                <td><b>${row.Needed}</b></td>
-            </tr>`;
-        });
-
-        html += `</tbody></table>`;
-        document.getElementById('resultsArea').innerHTML = html;
-    }
-
-    function downloadExcel() {
-        const ws = XLSX.utils.json_to_sheet(processedDataGlobal);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-        XLSX.writeFile(wb, "ASK_Attendance_Report.xlsx");
-    }
-</script>
-
+        function downloadExcel() {
+            const ws = XLSX.utils.json_to_sheet(globalProcessedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance_Report");
+            XLSX.writeFile(wb, "ASK_Attendance_Summary.xlsx");
+        }
+    </script>
 </body>
 </html>
