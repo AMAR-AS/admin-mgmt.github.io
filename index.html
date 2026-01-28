@@ -3,77 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Calculator | ASK</title>
+    <title>Attendance Dashboard | ASK</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f4f4f9; }
-        .card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-        input { margin: 20px 0; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #0056b3; }
+        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #1e293b; padding: 2rem; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+        
+        .upload-section { text-align: center; border: 2px dashed #cbd5e1; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; }
+        .btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; margin: 5px; }
+        .btn-submit { background: var(--primary); color: white; }
+        .btn-download { background: var(--success); color: white; display: none; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 2rem; font-size: 0.9rem; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .status-short { color: var(--danger); font-weight: bold; }
+        .status-safe { color: var(--success); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>Attendance Requirement Tool</h2>
-    <p>Upload your <b>.xlsx</b> file (with columns TH, AH, and DL)</p>
-    <input type="file" id="upload" accept=".xlsx, .xls" />
-    <br>
-    <div id="status"></div>
+<div class="container">
+    <h2>ASK Attendance Dashboard</h2>
+    
+    <div class="upload-section">
+        <input type="file" id="upload" accept=".xlsx, .xls" />
+        <br><br>
+        <button class="btn btn-submit" onclick="processFile()">Submit & Calculate</button>
+        <button id="downloadBtn" class="btn btn-download" onclick="downloadExcel()">Download Excel Report</button>
+    </div>
+
+    <div id="resultsArea">
+        </div>
 </div>
 
 <script>
-    document.getElementById('upload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
+    let processedDataGlobal = [];
 
+    function processFile() {
+        const fileInput = document.getElementById('upload');
+        if (!fileInput.files[0]) {
+            alert("Please select a file first!");
+            return;
+        }
+
+        const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             
-            // Get the first sheet
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            
-            // Convert to JSON (starting from row 5/header row)
+            // We use range: 4 to skip the university header rows
             const jsonData = XLSX.utils.sheet_to_json(worksheet, {range: 4});
 
-            // Process the rows
-            const processedData = jsonData.map(row => {
+            processedDataGlobal = jsonData.map(row => {
                 const th = parseFloat(row['TH']) || 0;
                 const ah = parseFloat(row['AH']) || 0;
                 const dl = parseFloat(row['DL']) || 0;
-                
                 const totalAttended = ah + dl;
                 const currentPercent = th > 0 ? (totalAttended / th) * 100 : 0;
                 
-                // Magic Formula: 3*TH - 4*(AH+DL)
+                // Formula: 3*TH - 4*(AH+DL) to reach 75%
                 const needed = Math.max(0, Math.ceil(3 * th - 4 * totalAttended));
 
                 return {
-                    "Course Name": row['Course Name'],
-                    "Total Hours (TH)": th,
-                    "Attended (AH)": ah,
-                    "Duty Leave (DL)": dl,
-                    "Total Attended": totalAttended,
-                    "Current %": currentPercent.toFixed(2) + "%",
+                    "Course": row['Course Name'] || "Unknown",
+                    "Total": th,
+                    "Attended": totalAttended,
+                    "Percentage": currentPercent.toFixed(1) + "%",
                     "Status": currentPercent < 75 ? "Short" : "Safe ✅",
-                    "Hours to Attend": needed
+                    "Needed": needed
                 };
             });
 
-            // Create a new workbook and download it
-            const newSheet = XLSX.utils.json_to_sheet(processedData);
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Attendance Summary");
-            
-            XLSX.writeFile(newWorkbook, "Calculated_Attendance.xlsx");
-            document.getElementById('status').innerText = "File Processed & Downloaded!";
+            renderTable(processedDataGlobal);
+            document.getElementById('downloadBtn').style.display = 'inline-block';
         };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    }
 
-        reader.readAsArrayBuffer(file);
-    });
+    function renderTable(data) {
+        let html = `<table>
+            <thead>
+                <tr>
+                    <th>Course Name</th>
+                    <th>Total Hours</th>
+                    <th>Attended (inc. DL)</th>
+                    <th>Current %</th>
+                    <th>Status</th>
+                    <th>Hours to Attend</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        data.forEach(row => {
+            const statusClass = row.Status === "Short" ? "status-short" : "status-safe";
+            html += `<tr>
+                <td>${row.Course}</td>
+                <td>${row.Total}</td>
+                <td>${row.Attended}</td>
+                <td>${row.Percentage}</td>
+                <td class="${statusClass}">${row.Status}</td>
+                <td><b>${row.Needed}</b></td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        document.getElementById('resultsArea').innerHTML = html;
+    }
+
+    function downloadExcel() {
+        const ws = XLSX.utils.json_to_sheet(processedDataGlobal);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+        XLSX.writeFile(wb, "ASK_Attendance_Report.xlsx");
+    }
 </script>
 
 </body>
