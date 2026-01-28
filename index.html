@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Calculator | ASK</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f4f4f9; }
+        .card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        input { margin: 20px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Attendance Requirement Tool</h2>
+    <p>Upload your <b>.xlsx</b> file (with columns TH, AH, and DL)</p>
+    <input type="file" id="upload" accept=".xlsx, .xls" />
+    <br>
+    <div id="status"></div>
+</div>
+
+<script>
+    document.getElementById('upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            // Get the first sheet
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Convert to JSON (starting from row 5/header row)
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {range: 4});
+
+            // Process the rows
+            const processedData = jsonData.map(row => {
+                const th = parseFloat(row['TH']) || 0;
+                const ah = parseFloat(row['AH']) || 0;
+                const dl = parseFloat(row['DL']) || 0;
+                
+                const totalAttended = ah + dl;
+                const currentPercent = th > 0 ? (totalAttended / th) * 100 : 0;
+                
+                // Magic Formula: 3*TH - 4*(AH+DL)
+                const needed = Math.max(0, Math.ceil(3 * th - 4 * totalAttended));
+
+                return {
+                    "Course Name": row['Course Name'],
+                    "Total Hours (TH)": th,
+                    "Attended (AH)": ah,
+                    "Duty Leave (DL)": dl,
+                    "Total Attended": totalAttended,
+                    "Current %": currentPercent.toFixed(2) + "%",
+                    "Status": currentPercent < 75 ? "Short" : "Safe ✅",
+                    "Hours to Attend": needed
+                };
+            });
+
+            // Create a new workbook and download it
+            const newSheet = XLSX.utils.json_to_sheet(processedData);
+            const newWorkbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Attendance Summary");
+            
+            XLSX.writeFile(newWorkbook, "Calculated_Attendance.xlsx");
+            document.getElementById('status').innerText = "File Processed & Downloaded!";
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+</script>
+
+</body>
+</html>
